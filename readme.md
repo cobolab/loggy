@@ -68,7 +68,7 @@ loggy.log(message);
 ```js
 var loggy = new Loggy();
 
-loggy.warn('Information message');
+loggy.log('Information message');
 ```
 
 #### **`loggy.warn()`**
