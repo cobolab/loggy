@@ -33,7 +33,7 @@ Example: `logs/info-2016-1-10.log`
 
 **Example**
 
-```
+```js
 require('cb-loggy');
 
 var loggy = new Loggy({
