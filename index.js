@@ -5,6 +5,7 @@ if ( !global.JSFix ) require('cb-jsfix');
 
 // Load dependencies.
 var file = require('fs-extra'),
+    read = require('./util/readline'),
     colr = require('cli-color'),
     path = require('path'),
     ansi = require('strip-ansi');
@@ -14,7 +15,8 @@ var defOptions = {
     print : true,   // Print the logs to the console.
     write : false,  // Write the logs to the file.
     dtime : false,  // Add date-time to the logs.
-    signs : false,   // Add log sign to the logs.
+    signs : false,  // Add log sign to the logs.
+    reads : true,  // Show full error block.
 
     // Folder to save te logs.
     cwd : path.resolve(process.cwd(), 'logs'),
@@ -43,12 +45,20 @@ class Loggy {
         this.color = colr;
     }
 
-    // Info logger.
+    // Deprecating
     log ( message ) {
+        // Print the logs if required.
+        if ( this.cfg.print ) console.log(message);
+
+        return this.write('logs', message);
+    }
+
+    // Info logger.
+    info ( message ) {
         let date = new Date();
 
         // Prepend date time to the message if required.
-        if ( this.cfg.dtime ) message = `${colr.blackBright(date.toLocaleString())} ${message}`;
+        if ( this.cfg.dtime ) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
 
         // Prepend log signs to the message if required.
         if ( this.cfg.signs ) message = `${colr.xterm(76)('[i]')} ${message}`;
@@ -56,7 +66,7 @@ class Loggy {
         // Print the logs if required.
         if ( this.cfg.print ) console.log(message);
 
-        this.write('info', message);
+        return this.write('info', message);
     }
 
     // Warning logger.
@@ -64,7 +74,7 @@ class Loggy {
         let date = new Date();
 
         // Prepend date time to the message if required.
-        if ( this.cfg.dtime ) message = `${colr.blackBright(date.toLocaleString())} ${message}`;
+        if ( this.cfg.dtime ) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
 
         // Prepend log signs to the message if required.
         if ( this.cfg.signs ) message = `${colr.xterm(208)('[!]')} ${message}`;
@@ -72,23 +82,67 @@ class Loggy {
         // Print the logs if required.
         if ( this.cfg.print ) console.log(message);
 
-        this.write('warning', message);
+        return this.write('warning', message);
     }
 
     // Error logger.
-    error ( message ) {
+    error ( info, skipCall, skipFile, slice ) {
         let date = new Date();
 
-        // Prepend date time to the message if required.
-        if ( this.cfg.dtime ) message = `${colr.blackBright(date.toLocaleString())} ${message}`;
+        if ( isError(info) ) {
+            // Create new Error.
+            let error = info,
+                etext = '';
 
-        // Prepend log signs to the message if required.
-        if ( this.cfg.signs ) message = `${colr.xterm(196)('[x]')} ${message}`;
+            // Create the improved error stack.
+            let stack = this._readStack(this._parseStack(error, skipFile), skipCall);
 
-        // Print the logs if required.
-        if ( this.cfg.print ) console.log(message);
+            // Create message info.
+            etext = `${colr.redBright(info.message)}\r\n`;
 
-        this.write('error', message);
+            // Modify the stack.
+            error.stack = 'Error:\r\n    at ' + error.stack.split(' at ').slice(slice || 0).join(' at ');
+
+            // Append each stack text to message.
+            if ( this.cfg.reads ) {
+                stack.$each(( item, i ) => {
+                    if ( (Array.isArray(skipCall) && i > 0) || !Array.isArray(skipCall) ) {
+                        etext += `\r\n${item.text}`;
+                    }
+                });
+            }
+
+            // Prepend date time to the message if required.
+            if ( this.cfg.dtime ) etext = `[${colr.blackBright(date.toLocaleString())}] ${etext}`;
+
+            // Prepend log signs to the message if required.
+            if ( this.cfg.signs ) etext = `${colr.xterm(196)('[x]')} ${etext}`;
+
+            // Print the logs if required.
+            if ( this.cfg.print ) {
+                console.log(etext);
+            }
+
+            // Write the message.
+            this.write('error', etext);
+
+            // Throw error message.
+            throw error;
+        }
+        else if ( isString(info) ) {
+            // Prepend date time to the message if required.
+            if ( this.cfg.dtime ) info = `[${colr.blackBright(date.toLocaleString())}] ${info}`;
+
+            // Prepend log signs to the message if required.
+            if ( this.cfg.signs ) info = `${colr.xterm(196)('[x]')} ${info}`;
+
+            // Print the logs if required.
+            if ( this.cfg.print ) console.log(info);
+
+            this.write('error', info);
+        }
+
+        return this;
     }
 
     // Logs writer.
@@ -118,6 +172,255 @@ class Loggy {
             // Write the content to the log file.
             file.writeFileSync(filepath, content);
         }
+
+        return this;
+    }
+
+    /**
+     * Function argument checker.
+     *
+     * @param arg
+     * @param callback
+     */
+    assert ( arg, callback ) {
+        if ( !arg ) {
+            if ( isString(callback) ) {
+                // Create new error.
+                let error = new Error(`ERR_ASSERT: ${callback}`);
+
+                // Log the error.
+                this.error(error, [ 'Loggy.assert' ], null, 3);
+            }
+            else if ( isFunction(callback) ) {
+                // Create new Error.
+                let error = new Error('ERROR_ARGUMENT: Required argument is missing or invalid.');
+
+                // Modify the error stack.
+                error.stack = 'Error:\r\n    at ' + error.stack.split(' at ').slice(3).join(' at ');
+
+                // Call the callback.
+                callback.call(this, this._parseError(error, [ 'Loggy.assert' ]), error);
+            }
+        }
+    }
+
+    /**
+     * Error Parser
+     *
+     * @param err
+     * @param skipCall
+     * @param skipFile
+     * @returns {Array}
+     * @private
+     */
+    _parseError ( err, skipCall, skipFile ) {
+        if ( !isError(err) ) err = new Error();
+
+        return this._readStack(this._parseStack(err, skipCall), skipFile);
+    }
+
+    /**
+     * Error Stack Parser
+     *
+     * @param err
+     * @param skip
+     * @returns {Array}
+     * @private
+     */
+    _parseStack ( err, skip ) {
+        let stack = err.stack.split(' at ').map(function ( item ) {
+            return item.replace(/[\r\n]+/g, '').replace(/[\s]+$/, '');
+        });
+
+        let newStack = [];
+
+        stack.$each(item => {
+            let match = item.match(/^[a-zA-Z\d\.\<\>\_]+\s+/);
+
+            if ( match ) {
+                let call = match[ 0 ].replace(/[\s]+/g, ''),
+                    file = match.input
+                        .replace(match[ 0 ], '')
+                        .replace(/[\(\)]+/g, '')
+                        .split(':')[ 0 ],
+                    line = match.input
+                        .replace(match[ 0 ], '')
+                        .replace(/[\(\)]+/g, '')
+                        .replace(file + ':', '')
+                        .split(':');
+
+                if ( Array.isArray(skip) ) {
+                    if ( skip.indexOf(file) < 0 ) {
+                        newStack.push({
+                            call : call,
+                            file : file,
+                            line : {
+                                row : line[ 0 ],
+                                col : line[ 1 ]
+                            }
+                        });
+                    }
+                }
+                else {
+                    newStack.push({
+                        call : call,
+                        file : file,
+                        line : {
+                            row : line[ 0 ],
+                            col : line[ 1 ]
+                        }
+                    });
+                }
+            }
+        });
+
+        return newStack;
+    }
+
+    /**
+     * Error Stack Reader
+     *
+     * @param stack
+     * @param skip
+     * @returns {Array}
+     * @private
+     */
+    _readStack ( stack, skip ) {
+        // Creating new stack list.
+        let newStack = [];
+
+        // Creating gutter size.
+        let gutter = 0;
+
+        stack.$each(item => {
+            if ( String(item.line.row).length > gutter ) {
+                gutter = String(item.line.row).length;
+            }
+        });
+
+        gutter += 2;
+
+        stack.$each(item => {
+            // Mark to proceed the read.
+            let proceed = true;
+
+            // Check does the item need to be skipped.
+            if ( Array.isArray(skip) && skip.indexOf(item.call) > -1 ) proceed = false;
+
+            // Skip if proceed is false.
+            if ( proceed ) {
+                // File exist holder.
+                let exist;
+
+                // Ensure the file is exist.
+                try {
+                    exist = file.statSync(item.file);
+                }
+                catch ( err ) {
+                    exist = false;
+                }
+
+                // Create error messages block, error message, and error messages list.
+                let errText = colr.yellow(`[↓][ ${item.file} ][ ${item.line.row} ][ ${item.line.col} ]\r\n`),
+                    errList = [],
+                    errLine = '';
+
+                // Continue if file is exist.
+                if ( exist ) {
+                    let row = item.line.row,
+                        col = item.line.col;
+
+                    // Define gutter length, current line position, pick start, and pick end.
+                    let idx = 0,
+                        min = (Number(row) - 4),
+                        max = (Number(row) + 2);
+
+                    // Read the file line by line.
+                    let text = read(item.file),
+                        line = text.next();
+
+                    while ( !line.done ) {
+                        if ( idx >= min && idx <= max ) {
+                            // Creating line number and gutter.
+                            let sdx = String((idx + 1)),
+                                gut = '';
+
+                            // Loop through the gutter size to create line number with margin.
+                            gutter.$each(( i ) => {
+                                if ( i < sdx.length ) {
+                                    gut += sdx[ i ];
+                                }
+                                else {
+                                    gut += ' ';
+                                }
+                            });
+
+                            // Proceed the error line.
+                            if ( idx === item.line.row - 1 ) {
+                                // Add the error line.
+                                errLine = {
+                                    line : sdx,
+                                    text : line.value
+                                };
+
+                                let val = '';
+
+                                line.value.$each(( char, i ) => {
+                                    if ( i === (item.line.col - 1) ) {
+                                        val += colr.yellow('»');
+                                    }
+
+                                    val += char;
+                                });
+
+                                // Colorize the error line message.
+                                errText += colr.redBright(`${gut}${val}\r\n`);
+                            }
+                            else {
+                                errText += colr.cyan(`${gut}${line.value}\r\n`);
+                            }
+
+                            // Add new line to the list.
+                            errList.push({
+                                line : sdx,
+                                text : line.value
+                            });
+                        }
+
+                        // Proceed next line.
+                        line = text.next();
+
+                        // Increase current line position.
+                        idx++;
+                    }
+
+                    // Adding stack text.
+                    item.text = errText;
+
+                    // Adding stack object.
+                    item.raws = {
+                        curn : errLine,
+                        list : errList
+                    }
+
+                    // Push readed item to the stack list.
+                    newStack.push(item);
+                }
+            }
+        });
+
+        return newStack;
+    }
+
+    /**
+     * Color Remover.
+     *
+     * @param text
+     * @returns {*}
+     * @private
+     */
+    _cleanColor ( text ) {
+        return ansi(text);
     }
 }
 
