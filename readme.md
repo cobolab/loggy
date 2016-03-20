@@ -115,6 +115,28 @@ loggy.info(loggy.color.red('Information message.'));
 
 ***
 
+#### **`loggy.success()`**
+
+Success logger, will add **`[√]`** prefix to the logs message when the config is enabled.
+
+**Usage**
+
+``` js
+loggy.success(message);
+```
+
+* **`message`** - [REQUIRED] - String message, can contains colorized strings.
+
+**Example**
+
+``` js
+var loggy = new Loggy();
+
+loggy.success(loggy.color.red('Success message.'));
+```
+
+***
+
 #### **`loggy.warn()`**
 
 Warning logger.
@@ -334,6 +356,11 @@ otherStack();
 ***
 
 ## Changelog
+
+#### **`v1.1.1 - Mar 20, 2016`**
+
+* Added **`loggy.success()`** method.
+* Improved logger styles.
 
 #### **`v1.1.0 - Feb 20, 2016`**
 

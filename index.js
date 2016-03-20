@@ -16,7 +16,8 @@ var defOptions = {
     write : false,  // Write the logs to the file.
     dtime : false,  // Add date-time to the logs.
     signs : false,  // Add log sign to the logs.
-    reads : true,  // Show full error block.
+    reads : true,   // Show full error block.
+    throw : true,   // Throw error.
 
     // Folder to save te logs.
     cwd : path.resolve(process.cwd(), 'logs'),
@@ -29,12 +30,12 @@ var defOptions = {
 class Loggy {
     // Loggy constructor.
     constructor ( options ) {
+        // Creating configurations.
+        this.cfg = Object.create(defOptions);
+
         // Merge user defined options.
         if ( isObject(options) ) {
-            this.cfg = defOptions.$join(options);
-        }
-        else {
-            this.cfg = defOptions;
+            this.cfg.$join(options);
         }
 
         if ( process.argv.indexOf('--verbose') > -1 ) {
@@ -62,6 +63,22 @@ class Loggy {
 
         // Prepend log signs to the message if required.
         if ( this.cfg.signs ) message = `${colr.xterm(76)('[i]')} ${message}`;
+
+        // Print the logs if required.
+        if ( this.cfg.print ) console.log(message);
+
+        return this.write('info', message);
+    }
+
+    // Success logger.
+    success ( message ) {
+        let date = new Date();
+
+        // Prepend date time to the message if required.
+        if ( this.cfg.dtime ) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
+
+        // Prepend log signs to the message if required.
+        if ( this.cfg.signs ) message = `${colr.xterm(76)('[✓]')} ${message}`;
 
         // Print the logs if required.
         if ( this.cfg.print ) console.log(message);
@@ -127,7 +144,9 @@ class Loggy {
             this.write('error', etext);
 
             // Throw error message.
-            throw error;
+            if ( this.cfg.throw ) {
+                throw error;
+            }
         }
         else if ( isString(info) ) {
             // Prepend date time to the message if required.
@@ -189,14 +208,14 @@ class Loggy {
                 let error = new Error(`ERR_ASSERT: ${callback}`);
 
                 // Log the error.
-                this.error(error, [ 'Loggy.assert' ], null, 3);
+                this.error(error, [ 'Loggy.assert' ], null, 2);
             }
             else if ( isFunction(callback) ) {
                 // Create new Error.
                 let error = new Error('ERROR_ARGUMENT: Required argument is missing or invalid.');
 
                 // Modify the error stack.
-                error.stack = 'Error:\r\n    at ' + error.stack.split(' at ').slice(3).join(' at ');
+                error.stack = 'Error:\r\n    at ' + error.stack.split(' at ').slice(2).join(' at ');
 
                 // Call the callback.
                 callback.call(this, this._parseError(error, [ 'Loggy.assert' ]), error);
@@ -235,10 +254,10 @@ class Loggy {
         let newStack = [];
 
         stack.$each(item => {
-            let match = item.match(/^[a-zA-Z\d\.\<\>\_]+\s+/);
+            let match = item.match(/^[new\sa-zA-Z\d\.\<\>\_\-]+\s+/);
 
             if ( match ) {
-                let call = match[ 0 ].replace(/[\s]+/g, ''),
+                let call = match[ 0 ].replace(/[\s]+$/g, ''),
                     file = match.input
                         .replace(match[ 0 ], '')
                         .replace(/[\(\)]+/g, '')
@@ -363,21 +382,31 @@ class Loggy {
                                     text : line.value
                                 };
 
-                                let val = '';
+                                let val = '',
+                                    cfl = false;
 
                                 line.value.$each(( char, i ) => {
                                     if ( i === (item.line.col - 1) ) {
-                                        val += colr.yellow('»');
+                                        cfl = true;
                                     }
 
-                                    val += char;
+                                    if ( cfl ) {
+                                        val += colr.redBright.bold(char);
+                                    }
+                                    else {
+                                        val += char;
+                                    }
                                 });
 
                                 // Colorize the error line message.
-                                errText += colr.redBright(`${gut}${val}\r\n`);
+                                errText += colr.cyan(`${colr.redBright(gut)}${val}\r\n`);
                             }
                             else {
-                                errText += colr.cyan(`${gut}${line.value}\r\n`);
+                                let val = line.value.replace(/(?:\/\*(?:[\s\S]*?)\*\/)|(?:^\s*\/\/(?:.*)$)/gm, ( comment ) => {
+                                    return colr.xterm(239)(comment);
+                                });
+
+                                errText += colr.cyan(`${gut}${val}\r\n`);
                             }
 
                             // Add new line to the list.
