@@ -192,6 +192,35 @@ try {
 
 ***
 
+#### **`loggy.wait()`**
+
+Display logs that wait some process by adding spinner on the beginning of the log message.
+
+**Usage**
+
+```js
+loggy.wait(message);
+```
+
+*   **`message`** - [REQUIRED] - String message, can contains colorized strings.
+*   **`@return`** - **`{ done(), fail(ERROR_OBJECT) }`** return functions to mark the spinner as done or failed.
+
+**Example**
+
+```js
+const loggy = new Loggy();
+
+let spin = loggy.wait('Fetching data from server');
+
+setTimeout(function() {
+  spin.done();
+  // or
+  spin.fail(new Error());
+});
+```
+
+***
+
 #### **`loggy.write()`**
 
 Write message to the log file.
@@ -321,16 +350,16 @@ This function will return an Array contains stack infos. Each stack info will co
 * `call` - Stack function name.
 * `file` - Stack file name.
 * `line`
-  * `row` - Stack line number on the file.
-  * `col` - Stack column number on the file.
+* `row` - Stack line number on the file.
+* `col` - Stack column number on the file.
 * `text` - Stack text contains readed code reference from the file.
 * `raws`
-  * `curn`
-    * `line` - Error line number.
-    * `text` - Error text.
-  * `list` []
-    * `line` - Code line number.
-    * `text` - Code text.
+* `curn`
+  * `line` - Error line number.
+  * `text` - Error text.
+* `list` []
+  * `line` - Code line number.
+  * `text` - Code text.
 
 **Example**
 
@@ -356,6 +385,14 @@ otherStack();
 ***
 
 ## Changelog
+
+#### **`v1.1.2 - May 1, 2016`**
+
+*   Added **`loggy.wait()`** method.
+*   Added **`JSCS`** config.
+*   Added minimum NodeJS **`v.5.6`**
+*   Fixing private configs.
+*   Prevent **`Loggy`** registered twice.
 
 #### **`v1.1.1 - Mar 20, 2016`**
 

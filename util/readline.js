@@ -18,33 +18,33 @@
  */
 
 
-var fs = require('fs'),
+let fs = require('fs'),
     os = require('os');
 
-var EOL = os.EOL;
+let EOL = os.EOL;
 
 /**
  * Get a line from buffer & return it + remaining buffer
  *
  * @param {Buffer} buffer
  */
-function getLine ( buffer ) {
-    var i, line, newBuffer, end;
+function getLine(buffer) {
+    let i, end;
 
-    for ( i = 0; i < buffer.length; i++ ) {
+    for (i = 0; i < buffer.length; i++) {
         //detect end of line '\n'
-        if ( buffer[ i ] === 0x0a ) {
+        if (buffer[i] === 0x0a) {
 
             end = i;
 
-            if ( EOL.length > 1 ) {
+            if (EOL.length > 1) {
                 //account for windows '\r\n'
                 end = i - 1;
             }
 
             return {
-                line      : buffer.slice(0, end).toString(),
-                newBuffer : buffer.slice(i + 1)
+                line: buffer.slice(0, end).toString(),
+                newBuffer: buffer.slice(i + 1)
             }
         }
     }
@@ -58,52 +58,52 @@ function getLine ( buffer ) {
  * @param {String} path
  * @param {String} encoding - "optional" encoding in same format as nodejs Buffer
  */
-module.exports = function* readLineSync ( path, encoding ) {
-    var fsize,
+module.exports = function* readLineSync(path, encoding) {
+    let fsize,
         fd,
-        chunkSize  = 64 * 1024, //64KB
+        chunkSize = 64 * 1024, //64KB
         bufferSize = chunkSize,
         remainder,
-        curBuffer  = new Buffer(0, encoding),
+        curBuffer = new Buffer(0, encoding),
         readBuffer,
         numOfLoops;
 
-    if ( !fs.existsSync(path) ) {
-        throw new Error("no such file or directory '" + path + "'");
+    if (!fs.existsSync(path)) {
+        throw new Error(`no such file or directory '${path}'`);
     }
 
     fsize = fs.statSync(path).size;
 
-    if ( fsize < chunkSize ) {
+    if (fsize < chunkSize) {
         bufferSize = fsize;
     }
 
     numOfLoops = Math.floor(fsize / bufferSize);
-    remainder  = fsize % bufferSize;
+    remainder = fsize % bufferSize;
 
     fd = fs.openSync(path, 'r');
 
-    for ( var i = 0; i < numOfLoops; i++ ) {
+    for (let i = 0; i < numOfLoops; i++) {
         readBuffer = new Buffer(bufferSize, encoding);
 
         fs.readSync(fd, readBuffer, 0, bufferSize, bufferSize * i);
 
-        curBuffer = Buffer.concat([ curBuffer, readBuffer ], curBuffer.length + readBuffer.length);
+        curBuffer = Buffer.concat([curBuffer, readBuffer], curBuffer.length + readBuffer.length);
 
-        while ( lineObj = getLine(curBuffer) ) {
+        while (lineObj = getLine(curBuffer)) {
             curBuffer = lineObj.newBuffer;
             yield lineObj.line;
         }
     }
 
-    if ( remainder > 0 ) {
+    if (remainder > 0) {
         readBuffer = new Buffer(remainder, encoding);
 
         fs.readSync(fd, readBuffer, 0, remainder, bufferSize * i);
 
-        curBuffer = Buffer.concat([ curBuffer, readBuffer ], curBuffer.length + readBuffer.length);
+        curBuffer = Buffer.concat([curBuffer, readBuffer], curBuffer.length + readBuffer.length);
 
-        while ( lineObj = getLine(curBuffer) ) {
+        while (lineObj = getLine(curBuffer)) {
             curBuffer = lineObj.newBuffer;
             yield lineObj.line;
         }
@@ -111,7 +111,7 @@ module.exports = function* readLineSync ( path, encoding ) {
 
     //return last remainings in the buffer in case
     //it didn't have any more lines
-    if ( curBuffer.length ) {
+    if (curBuffer.length) {
         yield curBuffer.toString();
     }
 }

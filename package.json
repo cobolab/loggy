@@ -1,28 +1,32 @@
 {
-    "name"        : "cb-loggy",
-    "version"     : "1.1.1",
-    "description" : "A Leightweight NodeJS Logger",
-    "main"        : "index.js",
-    "scripts"     : {
+    "name": "cb-loggy",
+    "version": "1.1.2",
+    "description": "A Leightweight NodeJS Logger",
+    "main": "index.js",
+    "scripts": {
         "test": "node test"
     },
-    "repository"  : {
+    "repository": {
         "type": "git",
-        "url" : "git+ssh://git@github.com/cobolab/loggy.git"
+        "url": "git+ssh://git@github.com/cobolab/loggy.git"
     },
-    "keywords"    : [
+    "keywords": [
         "logger"
     ],
-    "author"      : "Nanang Mahdaen El Agung <nanang@mahdaen.name>",
-    "license"     : "MIT",
-    "bugs"        : {
+    "author": "Nanang Mahdaen El Agung <nanang@mahdaen.name>",
+    "license": "MIT",
+    "bugs": {
         "url": "https://github.com/cobolab/loggy/issues"
     },
-    "homepage"    : "https://github.com/cobolab/loggy#readme",
+    "homepage": "https://github.com/cobolab/loggy#readme",
     "dependencies": {
-        "cb-jsfix"  : "^1.2.1",
-        "cli-color" : "^1.1.0",
-        "fs-extra"  : "^0.26.4",
+        "cb-jsfix": "^1.2.1",
+        "cli-color": "^1.1.0",
+        "cli-spinner": "^0.2.5",
+        "fs-extra": "^0.26.4",
         "strip-ansi": "^3.0.0"
+    },
+    "engines": {
+        "node": ">=5.6.0"
     }
 }
