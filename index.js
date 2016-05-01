@@ -20,6 +20,7 @@ let defOptions = {
     signs: false,  // Add log sign to the logs.
     reads: true,   // Show full error block.
     throw: true,   // Throw error.
+    indent: 4,     // Default indent size.
 
     // Folder to save te logs.
     cwd: path.resolve(process.cwd(), 'logs')
@@ -61,13 +62,10 @@ class Loggy {
 
     // Info logger.
     info(message) {
-        let date = new Date();
+        this.assert(isString(message), 'info(message) => Message must be a string!');
 
-        // Prepend date time to the message if required.
-        if (this.cfg.dtime) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
-
-        // Prepend log signs to the message if required.
-        if (this.cfg.signs) message = `${colr.xterm(76)('[i]')} ${message}`;
+        // Format the message.
+        message = this._format(message, colr.xterm(76), '[i]');
 
         // Print the logs if required.
         if (this.cfg.print) cli.log(message);
@@ -77,13 +75,10 @@ class Loggy {
 
     // Success logger.
     success(message) {
-        let date = new Date();
+        this.assert(isString(message), 'success(message) => Message must be a string!');
 
-        // Prepend date time to the message if required.
-        if (this.cfg.dtime) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
-
-        // Prepend log signs to the message if required.
-        if (this.cfg.signs) message = `${colr.xterm(76)('[✓]')} ${message}`;
+        // Format the message.
+        message = this._format(message, colr.xterm(76), '[✓]');
 
         // Print the logs if required.
         if (this.cfg.print) cli.log(message);
@@ -93,13 +88,10 @@ class Loggy {
 
     // Warning logger.
     warn(message) {
-        let date = new Date();
+        this.assert(isString(message), 'warn(message) => Message must be a string!');
 
-        // Prepend date time to the message if required.
-        if (this.cfg.dtime) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
-
-        // Prepend log signs to the message if required.
-        if (this.cfg.signs) message = `${colr.xterm(208)('[!]')} ${message}`;
+        // Format the message.
+        message = this._format(message, colr.xterm(208), '[!]');
 
         // Print the logs if required.
         if (this.cfg.print) cli.log(message);
@@ -109,8 +101,6 @@ class Loggy {
 
     // Error logger.
     error(info, skipCall, skipFile, slice) {
-        let date = new Date();
-
         if (isError(info)) {
             // Create new Error.
             let error = info,
@@ -134,11 +124,8 @@ class Loggy {
                 });
             }
 
-            // Prepend date time to the message if required.
-            if (this.cfg.dtime) etext = `[${colr.blackBright(date.toLocaleString())}] ${etext}`;
-
-            // Prepend log signs to the message if required.
-            if (this.cfg.signs) etext = `${colr.xterm(196)('[x]')} ${etext}`;
+            // Format the message.
+            etext = this._format(etext, colr.xterm(196), '[x]');
 
             // Print the logs if required.
             if (this.cfg.print) {
@@ -153,11 +140,8 @@ class Loggy {
                 throw error;
             }
         } else if (isString(info)) {
-            // Prepend date time to the message if required.
-            if (this.cfg.dtime) info = `[${colr.blackBright(date.toLocaleString())}] ${info}`;
-
-            // Prepend log signs to the message if required.
-            if (this.cfg.signs) info = `${colr.xterm(196)('[x]')} ${info}`;
+            // Format the message.
+            info = this._format(info, colr.xterm(196), '[x]');
 
             // Print the logs if required.
             if (this.cfg.print) cli.log(info);
@@ -170,31 +154,40 @@ class Loggy {
 
     // Show waiting message.
     wait(message) {
+        this.assert(isString(message), 'wait(message) => Message must be a string!');
+
+        // Wrap this object.
         let self = this;
-        let date = new Date();
 
         // Prepend date time to the message if required.
-        let msg = message;
+        let msg = `${this._format(message, colr.xterm(76), ' %s')}`;
 
-        if (this.cfg.dtime) msg = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
-
+        // Creating spinner.
         let spin = new Spinner(msg);
 
-        if (isString(message)) {
-            spin.setSpinnerString(18);
-            spin.start();
-        }
+        // Set the spinner style and then start the spinner.
+        spin.setSpinnerString(18);
+        spin.start();
 
         return {
+            // Function to mark the waiting status as done.
             done() {
+                // Stop and clean the spinner.
                 spin.stop(true);
+
+                // Use the success logger to mark as done.
                 self.success(message);
             },
+            // Function to mark the waiting status as failed.
             fail(error) {
+                // Stop and clean the spinner.
                 spin.stop(true);
+
+                // Use error logger to mark as failed.
                 self.error(message);
 
                 if (error) {
+                    // If error object defined, then use it to show the error stacks.
                     self.error(error);
                 }
             }
@@ -481,6 +474,63 @@ class Loggy {
      */
     _cleanColor(text) {
         return ansi(text);
+    }
+
+    /**
+     * Log Message Formatter
+     *
+     * @param {string} message - String message to format.
+     * @param {function} [signColor] - Function to color the sign.
+     * @param {string} [sign] - String log sign.
+     * @returns {string}
+     */
+    _format(message, signColor, sign) {
+        this.assert(isString(message), '_message(message) => Message must be a string!');
+
+        let date = new Date();
+        let level = 0;
+
+        // Get the indent level from message.
+        message = message.replace(/^\%[\d]+\%/, $1 => {
+            level = Number($1.replace(/\%/g, ''));
+            return '';
+        });
+
+        // Prepend date time to the message if required.
+        if (this.cfg.dtime) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
+
+        // Prepend log signs to the message if required.
+        if (this.cfg.signs) message = `${(signColor || colr.xterm(76))(`${sign || '[i]'}`)} ${message}`;
+
+        // Indent the message.
+        message = this._indent(message, level);
+
+        return message;
+    }
+
+    /**
+     * Indent Generator
+     *
+     * @param {number} level - Number indent level.
+     * @returns {string}
+     */
+    _indent(message, level) {
+        this.assert(isString(message), '_indent(message, level) => Message must be a string!');
+        this.assert(isNumber(level), '_indent(message, level) => Indent level must be a number!');
+
+        // Create blank indent.
+        let indent = '';
+
+        // Iterate indent level.
+        for (let i = 1; i <= level; ++i) {
+            // Iterate indent size to fill spacess.
+            for (let j = 1; j <= this.cfg.indent; ++j) {
+                indent += ' ';
+            }
+        }
+
+        // Return the message with indent at beginning.
+        return `${indent}${message}`;
     }
 }
 

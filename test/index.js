@@ -7,9 +7,10 @@ let loggy = new Loggy({
     print: true,
     write: true,
     signs: true,
-    dtime: true,
+    dtime: false,
     reads: true,
-    global: true
+    global: true,
+    indent: 4
 });
 
 // Wrapping colors from loggy.
@@ -24,10 +25,15 @@ loggy.info(`${grn('Printing information message using ')} loggy.info()`);
 loggy.warn(`${ylw('Printing warning message using ')} loggy.warn()`);
 loggy.error(`${red('Printing error message using ')} loggy.error()`);
 
+loggy.info(`Printing message without indent`);
+loggy.info(`%1%Printing message with indent 1`);
+loggy.info(`%2%Printing message with indent 2`);
+loggy.info(`%3%Printing message with indent 3`);
+
 const cli = global.console;
 
 let cwait = loggy.wait(`${grn('Printing message that show spinner using')} loggy.wait(), and success.`);
-let fwait = loggy.wait(`${grn('Printing message that show spinner using')} loggy.wait(), and failed.`);
+let fwait = loggy.wait(`%1%${grn('Printing message that show spinner using')} loggy.wait(), and failed.`);
 
 setTimeout(() => {
     cwait.done();
@@ -46,8 +52,8 @@ catch (err) {
 }
 
 // Function that contains the assert fill excluded from the error stack.
-function fileReader() {
-    //loggy.assert(isString(file), `Argument ${loggy.color.green('file')} is required and must be string to call the "fileReader(file)."`);
+function fileReader(file) {
+    // loggy.assert(isString(file), `Argument ${loggy.color.green('file')} is required and must be string to call the "fileReader(file)."`);
 
     cli.log('Continue if all fine');
 }
@@ -61,7 +67,7 @@ function indirectRead(file) {
 function init() {
     let content = indirectRead(); // Causing error since the arg is required.
 
-    cli.log(content);
+    // cli.log(content);
 }
 
 // part of error stack.

@@ -1,6 +1,6 @@
 # Loggy
 
-### v1.1.0
+### v1.1.4
 
 A simple NodeJS logger that print the message to the console and write the message to the log files. The module is created to support the Stater project.
 
@@ -23,13 +23,16 @@ var log = new Loggy(options);
 * **`dtime`**   - Add date-time to the message. Default: **`false`**
 * **`signs`**   - Add log sign ([i], [!], [x]) to the message. Default: **`false`**
 * **`reads`**   - Allow to read the error files as code reference. Default: **`true`**
+* **`indent`** - Set the indent size. Default: **`4`**
 * **`cwd`**     - The folder path to write the log files in. Default: **`process.cwd()/logs`**
 
 If you set the **`print`** option to **`false`**, but you define **`--verbose`** on the CLI command, the print option will be set to **`true`**.
 
-If you set the **`write`** option to **`true`**, the log files will be written to the **`cwd`** path. Each log type will be
+Every **`message`** argument support indent pattern. So, if you want to indent the logs, you can simply add **`%LEVEL%`** pattern at beginning.
 
-written to the difference files, with `info-`, `wanring-`, and `error-` as the filename prefix, followed by current `year-month-date`.
+Example: **`loggy.info('%2% Indent level 2');`**.
+
+If you set the **`write`** option to **`true`**, the log files will be written to the **`cwd`** path. Each log type will be written to the difference files, with `info-`, `wanring-`, and `error-` as the filename prefix, followed by current `year-month-date`.
 
 Example: `logs/info-2016-1-10.log`
 
@@ -385,6 +388,16 @@ otherStack();
 ***
 
 ## Changelog
+
+#### **`v1.1.4 - May 1, 2016`**
+
+*   Move the waiting indicator to the end of lines.
+
+*   Added indent pattern (**`%LEVEL%`**) to indent log messages.
+
+*   Improvements.
+
+    [​]: 
 
 #### **`v1.1.3 - May 1, 2016`**
 
