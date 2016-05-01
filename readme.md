@@ -386,6 +386,10 @@ otherStack();
 
 ## Changelog
 
+#### **`v1.1.3 - May 1, 2016`**
+
+*   Fixing blank wait message when `dtime` options is undefined.
+
 #### **`v1.1.2 - May 1, 2016`**
 
 *   Added **`loggy.wait()`** method.

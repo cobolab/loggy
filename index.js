@@ -174,7 +174,7 @@ class Loggy {
         let date = new Date();
 
         // Prepend date time to the message if required.
-        let msg;
+        let msg = message;
 
         if (this.cfg.dtime) msg = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
 
