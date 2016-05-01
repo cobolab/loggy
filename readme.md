@@ -353,16 +353,19 @@ This function will return an Array contains stack infos. Each stack info will co
 * `call` - Stack function name.
 * `file` - Stack file name.
 * `line`
-* `row` - Stack line number on the file.
-* `col` - Stack column number on the file.
+  * `row` - Stack line number on the file.
+  * `col` - Stack column number on the file.
+
 * `text` - Stack text contains readed code reference from the file.
 * `raws`
 * `curn`
   * `line` - Error line number.
   * `text` - Error text.
+
 * `list` []
   * `line` - Code line number.
   * `text` - Code text.
+
 
 **Example**
 
@@ -397,7 +400,6 @@ otherStack();
 
 *   Improvements.
 
-    [​]: 
 
 #### **`v1.1.3 - May 1, 2016`**
 
