@@ -392,12 +392,14 @@ otherStack();
 
 ## Changelog
 
+#### **`v1.1.5 - May 10, 2016`**
+
+* Makes the `.log()` accept indentation.
+
 #### **`v1.1.4 - May 1, 2016`**
 
 *   Move the waiting indicator to the end of lines.
-
 *   Added indent pattern (**`%LEVEL%`**) to indent log messages.
-
 *   Improvements.
 
 

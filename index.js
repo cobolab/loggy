@@ -54,6 +54,11 @@ class Loggy {
 
     // Deprecating
     log(message) {
+        // Format the message.
+        if ('string' === typeof message) {
+            message = this._format(message, colr.xterm(76), '');
+        }
+
         // Print the logs if required.
         if (this.cfg.print) cli.log(message);
 
@@ -485,6 +490,7 @@ class Loggy {
      * @returns {string}
      */
     _format(message, signColor, sign) {
+        sign = sign ? `${sign} ` : '';
         this.assert(isString(message), '_message(message) => Message must be a string!');
 
         let date = new Date();
@@ -500,7 +506,7 @@ class Loggy {
         if (this.cfg.dtime) message = `[${colr.blackBright(date.toLocaleString())}] ${message}`;
 
         // Prepend log signs to the message if required.
-        if (this.cfg.signs) message = `${(signColor || colr.xterm(76))(`${sign || '[i]'}`)} ${message}`;
+        if (this.cfg.signs) message = `${(signColor || colr.xterm(76))(`${sign}`)}${message}`;
 
         // Indent the message.
         message = this._indent(message, level);
