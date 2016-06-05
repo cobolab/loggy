@@ -268,7 +268,7 @@ var log = new Loggy();
 // Function that contains the assert fill excluded from the error stack.
 function fileReader(file) {
   log.assert(isString(file), 'Argument ${log.color.green("file")} is required and must be string to call the "fileReader(file)."');
-  
+
   console.log('Continue if all fine');
 }
 
@@ -280,7 +280,7 @@ function indirectRead(file) {
 // Part of error stack.
 function init() {
   var content = indirectRead(); // Causing error since the arg is required.
-  
+
   console.log(content);
 }
 
@@ -376,7 +376,7 @@ var loggy = new Loggy();
 function parseError() {
   var err = new Error();
   var stack = loggy._parseError(err, [ 'parseError' ]);
-  
+
   console.log(stack.text);
 }
 
@@ -391,6 +391,10 @@ otherStack();
 ***
 
 ## Changelog
+
+#### **`v1.1.6 - Jun 05, 2016`**
+
+* Fixing error with `'use strict';`
 
 #### **`v1.1.5 - May 10, 2016`**
 
@@ -428,4 +432,3 @@ otherStack();
 * Added **`loggy._parseError()`**
 * Added **`loggy._cleanColor()`**
 * Imrpovement of **`loggy.error()`**
-

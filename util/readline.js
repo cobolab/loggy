@@ -16,7 +16,7 @@
  * Author: Basem Mostafa, http://dbasem.com/
  * License: MIT
  */
-
+'use strict';
 
 let fs = require('fs'),
     os = require('os');
